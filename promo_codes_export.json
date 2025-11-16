@@ -1,0 +1,1 @@
+[{"_id":{"$oid":"690fa4fdf1001bca40ba7be8"},"id":"1af4bed3-e744-4e90-a513-73bb9eb86755","code":"TESTPROMO","discountType":"percentage","discountValue":20.0,"description":"Test 20% off","expiryDate":null,"usageLimit":100,"usedCount":0,"isActive":true,"createdAt":{"$date":"2025-11-08T20:15:57.97Z"}}]
