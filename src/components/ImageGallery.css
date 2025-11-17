@@ -1,0 +1,51 @@
+.gallery-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+}
+
+.gallery-container {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+.gallery-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.gallery-container img {
+  height: 180px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: #00000077;
+  color: white;
+  border: none;
+  font-size: 30px;
+  padding: 10px 15px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.gallery-arrow:hover {
+  background: #000000cc;
+}
+
+.gallery-arrow.left {
+  left: 10px;
+}
+
+.gallery-arrow.right {
+  right: 10px;
+}
