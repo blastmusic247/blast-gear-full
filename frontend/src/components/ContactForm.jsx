@@ -88,7 +88,7 @@ function ContactForm() {
       />
 
       <HCaptcha
-        sitekey={process.env.REACT_APP_HCAPTCHA_SITE_KEY}
+        sitekey="b220bebc-2484-4066-8238-ac40f7be4e32"
         onVerify={(token) => setHcaptchaToken(token)}
         ref={hcaptchaRef}
       />
