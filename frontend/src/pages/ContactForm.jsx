@@ -1,34 +1,103 @@
+import React, { useState, useRef } from "react";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
-import { useState } from "react";
 
 function ContactForm() {
-  const [token, setToken] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
 
-  const handleVerify = (token) => {
-    setToken(token);
+  const [hcaptchaToken, setHcaptchaToken] = useState("");
+  const hcaptchaRef = useRef(null);
+
+  const [responseMessage, setResponseMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (!token) {
-      alert("Please complete the CAPTCHA.");
+    if (!hcaptchaToken) {
+      setResponseMessage("Please complete the security check.");
+      setLoading(false);
       return;
     }
 
-    // Continue normal form submit…
+    try {
+      const backendURL =
+        process.env.REACT_APP_API_URL ||
+        process.env.REACT_APP_BACKEND_URL ||
+        "https://blast-gear-backend.onrender.com";
+
+      const res = await fetch(`${backendURL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          hcaptchaToken,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setResponseMessage("Thank you! Your message was sent successfully.");
+        setForm({ name: "", email: "", message: "" });
+        setHcaptchaToken("");
+        hcaptchaRef.current.resetCaptcha();
+      } else {
+        setResponseMessage(data.error || "Something went wrong.");
+      }
+    } catch (error) {
+      setResponseMessage("Server error. Please try again later.");
+    }
+
+    setLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* Your form fields */}
+      <input
+        name="name"
+        placeholder="Your Name"
+        value={form.name}
+        onChange={handleChange}
+        required
+      />
+
+      <input
+        name="email"
+        type="email"
+        placeholder="Your Email"
+        value={form.email}
+        onChange={handleChange}
+        required
+      />
+
+      <textarea
+        name="message"
+        placeholder="Your Message"
+        value={form.message}
+        onChange={handleChange}
+        required
+      />
 
       <HCaptcha
         sitekey={process.env.REACT_APP_HCAPTCHA_SITE_KEY}
-        onVerify={handleVerify}
+        onVerify={(token) => setHcaptchaToken(token)}
+        ref={hcaptchaRef}
       />
 
-      <button type="submit">Send</button>
+      <button type="submit" disabled={loading}>
+        {loading ? "Sending..." : "Send Message"}
+      </button>
+
+      {responseMessage && <p>{responseMessage}</p>}
     </form>
   );
 }

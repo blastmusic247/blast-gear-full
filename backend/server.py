@@ -5,36 +5,63 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
+import requests
 
-# Import route modules
-from routes import products, orders, contact
+# -------------------------
+# hCaptcha Verification
+# -------------------------
+def verify_hcaptcha(token):
+    secret = os.getenv("HCAPTCHA_SECRET")
+    url = "https://hcaptcha.com/siteverify"
+    
+    data = {
+        "secret": secret,
+        "response": token
+    }
 
+    response = requests.post(url, data=data)
+    result = response.json()
+    return result.get("success", False)
+
+
+# -------------------------
+# Load ENV
+# -------------------------
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+
+# -------------------------
+# MongoDB Setup
+# -------------------------
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+
+# -------------------------
+# Main FastAPI App
+# -------------------------
 app = FastAPI()
 
-# Create a router with the /api prefix
+# Create router with prefix /api
 api_router = APIRouter(prefix="/api")
 
-# Add your routes to the router
+
 @api_router.get("/")
 async def root():
     return {"message": "BLAST Gear API"}
 
-# Setup and include route modules with database connection
+
+# -------------------------
+# Import & Setup Routes
+# -------------------------
 from routes.products import setup_products_routes
 from routes.orders import setup_orders_routes
 from routes.admin import setup_admin_routes
 from routes.promo import setup_promo_routes
 from routes.gallery import setup_gallery_routes
-from routes import stripe_payment, upload
+from routes import stripe_payment, upload, contact
 
 products_router = setup_products_routes(db)
 orders_router = setup_orders_routes(db)
@@ -51,9 +78,13 @@ api_router.include_router(upload.router, tags=["upload"])
 api_router.include_router(promo_router, tags=["promo"])
 api_router.include_router(gallery_router, tags=["gallery"])
 
-# Include the router in the main app
+
+# Add router to main app
 app.include_router(api_router)
 
+# -------------------------
+# CORS
+# -------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -62,7 +93,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
+
+# -------------------------
+# Logging
+# -------------------------
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -70,11 +104,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# -------------------------
+# Startup Logic
+# -------------------------
 @app.on_event("startup")
 async def startup_event():
     """Seed initial product data if collection is empty"""
     products_count = await db.products.count_documents({})
-    
+
     if products_count == 0:
         logger.info("Seeding initial product data...")
         initial_products = [
@@ -139,11 +176,14 @@ async def startup_event():
                 "inStock": True
             }
         ]
-        
+
         await db.products.insert_many(initial_products)
         logger.info(f"Seeded {len(initial_products)} products")
 
 
+# -------------------------
+# Shutdown Logic
+# -------------------------
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()

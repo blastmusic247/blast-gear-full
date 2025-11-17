@@ -86,7 +86,7 @@ class ContactForm(BaseModel):
     name: str
     email: str
     message: str
-    recaptchaToken: str
+    hcaptchaToken: str
 
 
 class PromoCode(BaseModel):
